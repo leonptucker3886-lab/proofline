@@ -18,7 +18,7 @@ async function sql(query, params) {
 const hexId = n => crypto.randomBytes(n).toString("hex");
 
 async function getUser(id) {
-  const rows = await sql("SELECT id, email, phash, salt, biz, secret, created FROM pl_users WHERE id=$1 LIMIT 1", [id]);
+  const rows = await sql("SELECT id, email, phash, salt, biz, phone, website, secret, created FROM pl_users WHERE id=$1 LIMIT 1", [id]);
   return rows[0] || null;
 }
 function hashPassword(password, salt, dklen) {
@@ -122,11 +122,13 @@ module.exports = async (req, res) => {
 
       case "pl-report-info": {
         const token = String(body.t || "");
-        const rows = await sql("SELECT r.id, r.title, r.customer, r.jobdate, r.note, r.user_id, u.biz FROM pl_reports r JOIN pl_users u ON u.id=r.user_id WHERE r.token=$1 LIMIT 1", [token]);
+        const rows = await sql("SELECT r.id, r.title, r.customer, r.jobdate, r.note, r.views, r.user_id, u.biz, u.phone, u.website FROM pl_reports r JOIN pl_users u ON u.id=r.user_id WHERE r.token=$1 LIMIT 1", [token]);
         if (!rows.length) return err(res, 404, "Report not found.");
         const r = rows[0];
+        await sql("UPDATE pl_reports SET views = COALESCE(views,0) + 1 WHERE id=$1", [r.id]);
         return json(res, 200, {
           title: r.title, biz: r.biz, customer: r.customer, jobdate: r.jobdate, note: r.note,
+          phone: r.phone || "", website: r.website || "", views: Number(r.views || 0),
           before: await photoList(r.id, "before", token),
           after: await photoList(r.id, "after", token),
         });
@@ -141,13 +143,13 @@ module.exports = async (req, res) => {
 
     switch (a) {
       case "pl-state": {
-        const reports = await sql("SELECT id, title, customer, jobdate, note, token FROM pl_reports WHERE user_id=$1 ORDER BY created DESC", [user.id]);
+        const reports = await sql("SELECT id, title, customer, jobdate, note, token, COALESCE(views,0) AS views FROM pl_reports WHERE user_id=$1 ORDER BY created DESC", [user.id]);
         const counts = {};
         for (const r of reports) {
           const c = await sql("SELECT kind, count(*) AS n FROM pl_photos WHERE report_id=$1 GROUP BY kind", [r.id]);
           counts[r.id] = { before: Number(c.find(x => x.kind === "before")?.n || 0), after: Number(c.find(x => x.kind === "after")?.n || 0) };
         }
-        return json(res, 200, { user: { email: user.email, biz: user.biz }, reports, counts });
+        return json(res, 200, { user: { email: user.email, biz: user.biz, phone: user.phone || '', website: user.website || '' }, reports, counts });
       }
 
       case "pl-save-report": {
@@ -214,7 +216,12 @@ module.exports = async (req, res) => {
       }
 
       case "pl-save-settings": {
-        await sql("UPDATE pl_users SET biz=$2 WHERE id=$1", [user.id, String(body.biz || "").trim().slice(0, 120) || user.biz]);
+        await sql("UPDATE pl_users SET biz=$2, phone=$3, website=$4 WHERE id=$1", [
+          user.id,
+          String(body.biz || "").trim().slice(0, 120) || user.biz,
+          String(body.phone == null ? (user.phone || "") : body.phone).trim().slice(0, 40),
+          String(body.website == null ? (user.website || "") : body.website).trim().slice(0, 120),
+        ]);
         return json(res, 200, { ok: true });
       }
 
