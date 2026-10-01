@@ -168,6 +168,15 @@ module.exports = async (req, res) => {
         return json(res, 200, { id, token });
       }
 
+      case "pl-dup-report": {
+        const own = await sql("SELECT id, title, customer, jobdate, note FROM pl_reports WHERE id=$1 AND user_id=$2 LIMIT 1", [String(body.id || ""), user.id]);
+        if (!own.length) return err(res, 404, "Report not found.");
+        const id = hexId(8), token = hexId(12);
+        await sql("INSERT INTO pl_reports (id, user_id, title, customer, jobdate, token, note, created) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)", [id, user.id, (own[0].title || "Untitled job") + " (copy)", own[0].customer || "", own[0].jobdate || "", token, own[0].note || "", Date.now()]);
+        await sql("INSERT INTO pl_photos (id, report_id, user_id, kind, url, storage, key, data, mime, sort, created) SELECT substr(md5(random()::text || p.id || $2),1,16), $3, $4, p.kind, '', 'db', '', p.data, p.mime, p.sort, $5 FROM pl_photos p WHERE p.report_id=$1", [own[0].id, id, id, user.id, Date.now()]);
+        return json(res, 200, { id, token });
+      }
+
       case "pl-del-report": {
         await sql("DELETE FROM pl_photos WHERE report_id=$1 AND user_id=$2", [String(body.id || ""), user.id]);
         await sql("DELETE FROM pl_reports WHERE id=$1 AND user_id=$2", [String(body.id || ""), user.id]);
