@@ -70,6 +70,16 @@ label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bot
 .pub .head img.mark{width:64px;height:64px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
 .pub h1{font-size:clamp(24px,4.4vw,36px);margin:12px 0 4px}
 .pub .when{color:var(--muted);font-size:14px;margin-bottom:6px}
+.cmp{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);touch-action:none;cursor:ew-resize;margin:0 0 20px}
+.cmp img{width:100%;display:block;pointer-events:none}
+.cmp .afterw{position:absolute;inset:0;overflow:hidden}
+.cmp .afterw img{position:absolute;top:0;left:0;max-width:none}
+.cmp .handle{position:absolute;top:0;bottom:0;width:3px;background:var(--accent);cursor:ew-resize;z-index:2}
+.cmp .handle::after{content:'⇔';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--accent);color:var(--accent-ink);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700}
+.cmp .tag{position:absolute;top:10px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(0,0,0,.65);color:#fff;padding:4px 10px;border-radius:20px;z-index:1}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:30;display:flex;align-items:center;justify-content:center;padding:18px}
+.modal-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;text-align:center;max-width:340px}
+.modal-card img{width:220px;height:220px;image-rendering:pixelated;background:#fff;padding:10px;border-radius:10px;margin:10px 0}
 .ba{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:640px){.ba{grid-template-columns:1fr}}
 .ba .col h3{text-align:center;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
@@ -85,6 +95,7 @@ label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bot
 .err{color:#ff9d7a;font-size:14px;min-height:20px;margin:8px 0}
 </style><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Proofline?","acceptedAnswer":{"@type":"Answer","text":"Proofline turns before-and-after job photos into a clean, branded report page your customer can save, share, or print. Built for trades: chimney sweeps, HVAC, plumbing, landscaping and more."}},{"@type":"Question","name":"How much does Proofline cost?","acceptedAnswer":{"@type":"Answer","text":"From $4.83/mo, or included free with Ledgerline's Command tier ($46.50/mo), which bundles Ledgerline, Reviewline and Proofline for the whole crew."}},{"@type":"Question","name":"Do my customers need an account?","acceptedAnswer":{"@type":"Answer","text":"No. Every report gets a share link that opens a clean branded page in any browser — no app, no login."}},{"@type":"Question","name":"Can I print or export reports?","acceptedAnswer":{"@type":"Answer","text":"Yes — every share page has a Print / PDF button built in."}}]}</script>
 </head><body>
+<script src="/qrcode.min.js"></script>
 <div id="app"></div>
 <script>
 const api = (a, body) => fetch('/api?a=' + a, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Something went wrong'); return j; });
@@ -157,9 +168,10 @@ function landingView() {
       <div class="grid3" style="margin-top:18px">
         <div class="card"><h3>Before / after reports</h3><p>Arrival photos and finished-work photos, paired on one clean page.</p></div>
         <div class="card"><h3>Print / PDF export</h3><p>Every share page prints to a crisp PDF your customer can keep on file.</p></div>
+        <div class="card"><h3>QR + one-tap share</h3><p>Text it, email it, or let the customer scan a QR code before you leave the driveway.</p></div>
         <div class="card"><h3>Branded share pages</h3><p>Your business name on every report. No login, no app — just a link.</p></div>
         <div class="card"><h3>Job-matched photos</h3><p>Photos stay attached to the right job and the right customer, automatically.</p></div>
-        <div class="card"><h3>One-tap sharing</h3><p>Send the report by text or email the moment the job's done.</p></div>
+        <div class="card"><h3>Slide-to-compare</h3><p>Your customer drags a slider and watches the mess disappear. More convincing than any sales pitch.</p></div>
         <div class="card"><h3>Works on your phone</h3><p>Built for the truck. Snap, sort, and send between the driveway and the next job.</p></div>
       </div>
       <div style="text-align:center;margin-top:22px" class="card">
@@ -207,14 +219,17 @@ async function dashboardView() {
   const st = await api('pl-state'); S.reports = st.reports; S.counts = st.counts || {}; S.user = st.user;
   const cards = S.reports.map(r => {
     const c = S.counts[r.id] || { before: 0, after: 0 };
-    return `<div class="rep"><strong>${esc(r.title)}</strong><div class="meta">${esc(r.customer || 'No customer set')}${r.jobdate ? ' · ' + esc(r.jobdate) : ''}</div>
+    return `<div class="rep" data-f="${esc((r.title + ' ' + (r.customer || '')).toLowerCase())}"><strong>${esc(r.title)}</strong><div class="meta">${esc(r.customer || 'No customer set')}${r.jobdate ? ' · ' + esc(r.jobdate) : ''}</div>
     <div class="meta">📷 ${c.before} before · 📷 ${c.after} after</div>
-    <div class="row"><a class="btn small" href="/edit/${r.id}">Open</a><a class="btn small ghost" href="/r/${r.token}" target="_blank">View share page</a><button class="btn small ghost" data-del="${r.id}">Delete</button></div></div>`;
+    <div class="row"><a class="btn small" href="/edit/${r.id}">Open</a><a class="btn small ghost" href="/r/${r.token}" target="_blank">View share page</a><button class="btn small ghost" data-dup="${r.id}">Duplicate</button><button class="btn small ghost" data-del="${r.id}">Delete</button></div></div>`;
   }).join('');
   shell(`<div class="appbar"><h2>Your reports</h2><div style="display:flex;gap:10px"><button id="new">+ New report</button><a class="btn ghost" href="/settings">Settings</a></div></div>
-  ${S.reports.length ? `<div class="reports">${cards}</div>` : `<div class="card" style="text-align:center;padding:44px 18px"><h3>No reports yet</h3><p>Every finished job becomes proof. Snap the before, do the work, snap the after — send the link.<br><br></p><button id="new2">Create your first report</button></div>`}`);
+  ${S.reports.length > 3 ? `<input id="q" placeholder="Search reports and customers…" style="margin-bottom:16px">` : ''}
+  ${S.reports.length ? `<div class="reports" id="reps">${cards}</div>` : `<div class="card" style="text-align:center;padding:44px 18px"><h3>No reports yet</h3><p>Every finished job becomes proof. Snap the before, do the work, snap the after — send the link.<br><br></p><button id="new2">Create your first report</button></div>`}`);
   const create = () => api('pl-save-report', { title: 'Untitled job' }).then(r => { location.href = '/edit/' + r.id; }).catch(e => alert(e.message));
   $('#new').onclick = create; const n2 = $('#new2'); if (n2) n2.onclick = create;
+  const q = $('#q'); if (q) q.oninput = () => { const v = q.value.toLowerCase(); document.querySelectorAll('.rep').forEach(el => el.style.display = el.dataset.f.includes(v) ? '' : 'none'); };
+  document.querySelectorAll('[data-dup]').forEach(b => b.onclick = () => { b.textContent = 'Copying…'; api('pl-dup-report', { id: b.dataset.dup }).then(r => { location.href = '/edit/' + r.id; }).catch(e => { alert(e.message); b.textContent = 'Duplicate'; }); });
   document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { if (confirm('Delete this report and its photos?')) api('pl-del-report', { id: b.dataset.del }).then(boot).catch(e => alert(e.message)); });
 }
 
@@ -236,7 +251,8 @@ async function editorView(id) {
     return `<div class="shot" data-id="${p.id}"><img src="${p.url}" alt=""><button class="x" data-x="${p.id}" title="Delete">✕</button></div>`;
   }
   shell(`<div class="appbar"><h2>${esc(r.title)}</h2><div style="display:flex;gap:10px"><a class="btn ghost" href="/dashboard">All reports</a><a class="btn" href="/r/${r.token}" target="_blank">Open share page</a></div></div>
-  <div class="share-box"><code id="sharelink">${shareUrl}</code><button class="btn small" id="copy">Copy link</button></div>
+  <div class="share-box"><code id="sharelink">${shareUrl}</code><button class="btn small" id="copy">Copy link</button><button class="btn small" id="qrshow">QR</button><button class="btn small ghost" id="mail">✉ Email</button></div>
+  <div id="qrmodal" class="modal" style="display:none"><div class="modal-card"><h3>Scan to open</h3><div id="qrh"></div><p class="faint" style="margin-bottom:12px">Let your customer scan it before you leave the driveway.</p><button class="btn" id="qrclose">Close</button></div></div>
   <div class="field"><label>Job title</label><input id="f-title" maxlength="200" value="${esc(r.title)}"></div>
   <div class="grid3">
     <div class="field"><label>Customer (optional)</label><input id="f-cust" maxlength="120" value="${esc(r.customer)}" placeholder="Jane R."></div>
@@ -250,6 +266,10 @@ async function editorView(id) {
     ${col('after', 'After', 'The finished work. This is what sells the next job.')}
   </div>`);
   $('#copy').onclick = () => { navigator.clipboard.writeText(shareUrl).then(() => { $('#copy').textContent = 'Copied!'; setTimeout(() => $('#copy').textContent = 'Copy link', 1500); }); };
+  $('#mail').onclick = () => { location.href = 'mailto:?subject=' + encodeURIComponent(r.title + ' — photos of the job') + '&body=' + encodeURIComponent('Hi' + (r.customer ? ' ' + r.customer : '') + ',\n\nHere are the before-and-after photos of the work: ' + shareUrl + '\n\n— ' + (S.user ? S.user.biz : '')); };
+  $('#qrshow').onclick = () => { try { const q = qrcode(0, 'M'); q.addData(shareUrl); q.make(); $('#qrh').innerHTML = '<img src="' + q.createDataURL(8, 4) + '" alt="QR code">'; $('#qrmodal').style.display = 'flex'; } catch (e) { alert('QR unavailable.'); } };
+  $('#qrclose').onclick = () => $('#qrmodal').style.display = 'none';
+  $('#qrmodal').onclick = e => { if (e.target.id === 'qrmodal') $('#qrmodal').style.display = 'none'; };
   $('#save').onclick = async () => {
     try {
       await api('pl-save-report', { id: r.id, title: $('#f-title').value, customer: $('#f-cust').value, jobdate: $('#f-date').value, note: $('#f-note').value });
@@ -311,6 +331,10 @@ async function pubView(token) {
   try {
     const d = await api('pl-report-info', { t: token });
     const pile = arr => arr.length ? `<div class="stack">${arr.map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>` : `<p class="faint" style="text-align:center">No ${d.before === arr ? 'before' : 'after'} photos yet</p>`;
+    let slider = '';
+    if (d.before.length && d.after.length) {
+      slider = `<div class="cmp" id="cmp"><img src="${esc(d.before[0].url)}" alt="Before"><div class="afterw"><img src="${esc(d.after[0].url)}" alt="After"></div><span class="tag" style="left:10px">Before</span><span class="tag" style="right:10px">After</span><div class="handle" id="handle" style="left:50%"></div></div>`;
+    }
     app.innerHTML = header(`<a class="hh" href="https://www.leonlink.net">Leon&nbsp;Link</a><a class="hh" href="https://review.leonlink.net">Reviewline</a><a class="btn small ghost" href="#" onclick="window.print();return false">Print / PDF</a>`) + `
     <main class="pub">
       <div class="head">
@@ -318,6 +342,7 @@ async function pubView(token) {
         <h1>${esc(d.title)}</h1>
         <p class="when">${esc(d.biz)}${d.customer ? ' · for ' + esc(d.customer) : ''}${d.jobdate ? ' · ' + esc(d.jobdate) : ''}</p>
       </div>
+      ${slider ? `<div style="margin-bottom:8px;text-align:center"><span class="faint">⇔ drag to compare</span></div>${slider}` : ''}
       <div class="ba">
         <div class="col before"><h3>Before</h3>${pile(d.before)}</div>
         <div class="col"><h3>After</h3>${pile(d.after)}</div>
@@ -325,6 +350,15 @@ async function pubView(token) {
       ${d.note ? `<div class="note-card"><b>Work completed</b><br>${esc(d.note).replace(/\n/g, '<br>')}</div>` : ''}
     </main>
     <footer>Proof of work by ${esc(d.biz)} — made with <a href="https://www.leonlink.net">Proofline</a></footer>`;
+    const cmp = document.getElementById('cmp');
+    if (cmp) {
+      const afw = cmp.querySelector('.afterw'), hd = document.getElementById('handle');
+      let drag = false;
+      const move = x => { const r = cmp.getBoundingClientRect(); let p = Math.min(100, Math.max(0, (x - r.left) / r.width * 100)); afw.style.width = p + '%'; hd.style.left = p + '%'; };
+      cmp.addEventListener('pointerdown', e => { drag = true; cmp.setPointerCapture(e.pointerId); move(e.clientX); });
+      cmp.addEventListener('pointermove', e => { if (drag) move(e.clientX); });
+      cmp.addEventListener('pointerup', () => drag = false);
+    }
   } catch (e) {
     app.innerHTML = `<main class="pub" style="text-align:center;padding:80px 18px"><h1>Report not found</h1><p class="faint">This link may have been deleted.</p></main>`;
   }
