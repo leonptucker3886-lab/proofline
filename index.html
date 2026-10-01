@@ -80,6 +80,11 @@ label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bot
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:30;display:flex;align-items:center;justify-content:center;padding:18px}
 .modal-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;text-align:center;max-width:340px}
 .modal-card img{width:220px;height:220px;image-rendering:pixelated;background:#fff;padding:10px;border-radius:10px;margin:10px 0}
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:40;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px}
+.lb img{max-width:94vw;max-height:82vh;border-radius:10px;object-fit:contain}
+.lb .bar{display:flex;gap:14px;align-items:center;color:var(--muted);font-size:14px}
+.lb button{background:none;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:8px 16px;font-size:15px;cursor:pointer}
+.lb button:hover{border-color:var(--accent);color:var(--accent)}
 .ba{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:640px){.ba{grid-template-columns:1fr}}
 .ba .col h3{text-align:center;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
@@ -169,10 +174,10 @@ function landingView() {
         <div class="card"><h3>Before / after reports</h3><p>Arrival photos and finished-work photos, paired on one clean page.</p></div>
         <div class="card"><h3>Print / PDF export</h3><p>Every share page prints to a crisp PDF your customer can keep on file.</p></div>
         <div class="card"><h3>QR + one-tap share</h3><p>Text it, email it, or let the customer scan a QR code before you leave the driveway.</p></div>
-        <div class="card"><h3>Branded share pages</h3><p>Your business name on every report. No login, no app — just a link.</p></div>
+        <div class="card"><h3>Branded share pages</h3><p>Your name, phone and website on every report. No login, no app — just a link that keeps selling after you leave.</p></div>
         <div class="card"><h3>Job-matched photos</h3><p>Photos stay attached to the right job and the right customer, automatically.</p></div>
         <div class="card"><h3>Slide-to-compare</h3><p>Your customer drags a slider and watches the mess disappear. More convincing than any sales pitch.</p></div>
-        <div class="card"><h3>Works on your phone</h3><p>Built for the truck. Snap, sort, and send between the driveway and the next job.</p></div>
+        <div class="card"><h3>See when it's opened</h3><p>Every report counts its opens — you'll know the customer saw the proof, and so will they.</p></div>
       </div>
       <div style="text-align:center;margin-top:22px" class="card">
         <h3>Or get the whole Line</h3>
@@ -220,7 +225,7 @@ async function dashboardView() {
   const cards = S.reports.map(r => {
     const c = S.counts[r.id] || { before: 0, after: 0 };
     return `<div class="rep" data-f="${esc((r.title + ' ' + (r.customer || '')).toLowerCase())}"><strong>${esc(r.title)}</strong><div class="meta">${esc(r.customer || 'No customer set')}${r.jobdate ? ' · ' + esc(r.jobdate) : ''}</div>
-    <div class="meta">📷 ${c.before} before · 📷 ${c.after} after</div>
+    <div class="meta">📷 ${c.before} before · 📷 ${c.after} after${r.views ? ` · 👁 opened ${r.views}×` : ''}</div>
     <div class="row"><a class="btn small" href="/edit/${r.id}">Open</a><a class="btn small ghost" href="/r/${r.token}" target="_blank">View share page</a><button class="btn small ghost" data-dup="${r.id}">Duplicate</button><button class="btn small ghost" data-del="${r.id}">Delete</button></div></div>`;
   }).join('');
   shell(`<div class="appbar"><h2>Your reports</h2><div style="display:flex;gap:10px"><button id="new">+ New report</button><a class="btn ghost" href="/settings">Settings</a></div></div>
@@ -251,6 +256,7 @@ async function editorView(id) {
     return `<div class="shot" data-id="${p.id}"><img src="${p.url}" alt=""><button class="x" data-x="${p.id}" title="Delete">✕</button></div>`;
   }
   shell(`<div class="appbar"><h2>${esc(r.title)}</h2><div style="display:flex;gap:10px"><a class="btn ghost" href="/dashboard">All reports</a><a class="btn" href="/r/${r.token}" target="_blank">Open share page</a></div></div>
+  ${r.views ? `<p class="faint" style="margin:-6px 0 12px">👁 Your customer has opened this report ${r.views} time${r.views === 1 ? '' : 's'}.</p>` : ''}
   <div class="share-box"><code id="sharelink">${shareUrl}</code><button class="btn small" id="copy">Copy link</button><button class="btn small" id="qrshow">QR</button><button class="btn small ghost" id="mail">✉ Email</button></div>
   <div id="qrmodal" class="modal" style="display:none"><div class="modal-card"><h3>Scan to open</h3><div id="qrh"></div><p class="faint" style="margin-bottom:12px">Let your customer scan it before you leave the driveway.</p><button class="btn" id="qrclose">Close</button></div></div>
   <div class="field"><label>Job title</label><input id="f-title" maxlength="200" value="${esc(r.title)}"></div>
@@ -258,7 +264,9 @@ async function editorView(id) {
     <div class="field"><label>Customer (optional)</label><input id="f-cust" maxlength="120" value="${esc(r.customer)}" placeholder="Jane R."></div>
     <div class="field"><label>Date</label><input id="f-date" type="date" value="${esc(r.jobdate)}"></div>
   </div>
-  <div class="field"><label>Work completed (shows on the share page)</label><textarea id="f-note" maxlength="4000" placeholder="Swept the flue, level-2 camera inspection, replaced crown cap…">${esc(r.note)}</textarea></div>
+  <div class="field"><label>Work completed (shows on the share page)</label>
+  <div class="uprow" style="margin-bottom:8px"><select id="f-preset" style="background:#0f0d0a;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 12px;font-size:14px"><option value="">+ quick note…</option><option value="Swept the flue, level-2 camera inspection, replaced the crown cap.">Chimney sweep</option><option value="Full system inspection, cleared the line, tested flow and verified drainage.">Drain clear</option><option value="Replaced the failed part, tested the full cycle, cleaned the work area.">Repair visit</option><option value="Seasonal maintenance completed — filters replaced, system tested, everything within spec.">Seasonal maintenance</option><option value="Lawn mowed and edged, clippings hauled, beds blown clean.">Lawn care</option></select></div>
+  <textarea id="f-note" maxlength="4000" placeholder="Swept the flue, level-2 camera inspection, replaced crown cap…">${esc(r.note)}</textarea></div>
   <button id="save">Save details</button> <span class="faint" id="saved"></span>
   <div style="height:26px"></div>
   <div class="grid3">
@@ -276,6 +284,7 @@ async function editorView(id) {
       $('#saved').textContent = 'Saved ✓';
     } catch (e) { alert(e.message); }
   };
+  $('#f-preset').onchange = () => { const v = $('#f-preset').value; if (v) { $('#f-note').value = $('#f-note').value ? $('#f-note').value.replace(/\s*$/, '') + '\n' + v : v; $('#f-preset').value = ''; } };
   document.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => $('#file-' + b.dataset.pick).click());
   ['before', 'after'].forEach(kind => {
     const inp = $('#file-' + kind);
@@ -320,9 +329,12 @@ async function settingsView() {
   shell(`<div class="appbar"><h2>Settings</h2></div>
   <div class="card" style="max-width:520px">
     <div class="field"><label>Business name (shown on share pages)</label><input id="s-biz" maxlength="120" value="${esc(S.user.biz)}"></div>
+    <div class="field"><label>Phone (on every report you send)</label><input id="s-phone" maxlength="40" value="${esc(S.user.phone || '')}" placeholder="(555) 013-4477"></div>
+    <div class="field"><label>Website (optional)</label><input id="s-site" maxlength="120" value="${esc(S.user.website || '')}" placeholder="chimneyking.com"></div>
     <button id="s-save">Save settings</button> <span class="faint" id="saved"></span>
+    <p class="faint" style="margin-top:10px">Your name, phone and website print on every report — so the report itself does the marketing when it gets forwarded.</p>
   </div>`);
-  $('#s-save').onclick = () => api('pl-save-settings', { biz: $('#s-biz').value }).then(() => { $('#saved').textContent = 'Saved ✓'; }).catch(e => alert(e.message));
+  $('#s-save').onclick = () => api('pl-save-settings', { biz: $('#s-biz').value, phone: $('#s-phone').value, website: $('#s-site').value }).then(() => { $('#saved').textContent = 'Saved ✓'; }).catch(e => alert(e.message));
 }
 
 /* ---------- public share page ---------- */
@@ -348,8 +360,23 @@ async function pubView(token) {
         <div class="col"><h3>After</h3>${pile(d.after)}</div>
       </div>
       ${d.note ? `<div class="note-card"><b>Work completed</b><br>${esc(d.note).replace(/\n/g, '<br>')}</div>` : ''}
+      ${(d.phone || d.website) ? `<div class="note-card" style="text-align:center"><b>Need this again? Call ${esc(d.biz)}</b><br><span style="color:var(--accent);font-weight:700">${d.phone ? esc(d.phone) : ''}</span>${d.phone && d.website ? ' · ' : ''}${d.website ? `<a href="${esc(d.website.startsWith('http') ? d.website : 'https://' + d.website)}">${esc(d.website)}</a>` : ''}</div>` : ''}
     </main>
     <footer>Proof of work by ${esc(d.biz)} — made with <a href="https://www.leonlink.net">Proofline</a></footer>`;
+    const urls = [...d.before, ...d.after].map(p => p.url);
+    if (urls.length) {
+      const lb = document.createElement('div'); lb.className = 'lb'; lb.style.display = 'none';
+      document.body.appendChild(lb);
+      let li = 0;
+      const show = i => { li = (i + urls.length) % urls.length; lb.innerHTML = `<img src="${esc(urls[li])}" alt=""><div class="bar"><button id="lb-prev">‹</button><span>${li + 1} / ${urls.length}</span><button id="lb-next">›</button><button id="lb-x">Close</button></div>`;
+        lb.style.display = 'flex';
+        lb.querySelector('#lb-prev').onclick = e => { e.stopPropagation(); show(li - 1); };
+        lb.querySelector('#lb-next').onclick = e => { e.stopPropagation(); show(li + 1); };
+        lb.querySelector('#lb-x').onclick = () => lb.style.display = 'none'; };
+      document.querySelectorAll('.pub img').forEach(im => { if (!im.closest('header') && !im.closest('.head')) { im.style.cursor = 'zoom-in'; im.onclick = () => show(Math.max(0, urls.findIndex(u => im.src.endsWith(u)))); } });
+      lb.onclick = () => lb.style.display = 'none';
+      document.addEventListener('keydown', e => { if (lb.style.display === 'none') return; if (e.key === 'Escape') lb.style.display = 'none'; if (e.key === 'ArrowRight') show(li + 1); if (e.key === 'ArrowLeft') show(li - 1); });
+    }
     const cmp = document.getElementById('cmp');
     if (cmp) {
       const afw = cmp.querySelector('.afterw'), hd = document.getElementById('handle');
