@@ -83,7 +83,8 @@ label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bot
 .auth{max-width:400px;margin:48px auto;padding:0 18px}
 .auth h2{text-align:center}
 .err{color:#ff9d7a;font-size:14px;min-height:20px;margin:8px 0}
-</style></head><body>
+</style><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Proofline?","acceptedAnswer":{"@type":"Answer","text":"Proofline turns before-and-after job photos into a clean, branded report page your customer can save, share, or print. Built for trades: chimney sweeps, HVAC, plumbing, landscaping and more."}},{"@type":"Question","name":"How much does Proofline cost?","acceptedAnswer":{"@type":"Answer","text":"From $4.83/mo, or included free with Ledgerline's Command tier ($46.50/mo), which bundles Ledgerline, Reviewline and Proofline for the whole crew."}},{"@type":"Question","name":"Do my customers need an account?","acceptedAnswer":{"@type":"Answer","text":"No. Every report gets a share link that opens a clean branded page in any browser — no app, no login."}},{"@type":"Question","name":"Can I print or export reports?","acceptedAnswer":{"@type":"Answer","text":"Yes — every share page has a Print / PDF button built in."}}]}</script>
+</head><body>
 <div id="app"></div>
 <script>
 const api = (a, body) => fetch('/api?a=' + a, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Something went wrong'); return j; });
@@ -150,6 +151,30 @@ function landingView() {
         <div class="card"><h3>3 · Send the link</h3><p>One text message. Your customer gets a branded page they can save, share, or print.</p></div>
       </div>
       <div style="text-align:center;margin-top:26px"><a class="btn" href="/signup">Create your first report</a></div>
+    </div></section>
+    <section class="blocks" id="features"><div class="wrap">
+      <h2 style="text-align:center">Everything in the&nbsp;box</h2>
+      <div class="grid3" style="margin-top:18px">
+        <div class="card"><h3>Before / after reports</h3><p>Arrival photos and finished-work photos, paired on one clean page.</p></div>
+        <div class="card"><h3>Print / PDF export</h3><p>Every share page prints to a crisp PDF your customer can keep on file.</p></div>
+        <div class="card"><h3>Branded share pages</h3><p>Your business name on every report. No login, no app — just a link.</p></div>
+        <div class="card"><h3>Job-matched photos</h3><p>Photos stay attached to the right job and the right customer, automatically.</p></div>
+        <div class="card"><h3>One-tap sharing</h3><p>Send the report by text or email the moment the job's done.</p></div>
+        <div class="card"><h3>Works on your phone</h3><p>Built for the truck. Snap, sort, and send between the driveway and the next job.</p></div>
+      </div>
+      <div style="text-align:center;margin-top:22px" class="card">
+        <h3>Or get the whole Line</h3>
+        <p>Ledgerline Command — $46.50/mo — includes Ledgerline + Reviewline + Proofline, whole crew included, no per-user fees.</p>
+        <a class="btn ghost" href="https://app.leonlink.net" style="margin-top:8px">See Ledgerline</a>
+      </div>
+      <div id="download" style="text-align:center;margin-top:22px" class="card">
+        <h3>Put it on your phone</h3>
+        <p style="margin-bottom:10px">Proofline is installable — add it to your home screen like an app.</p>
+        <p class="faint">iPhone: Share → Add to Home Screen · Android: menu → Install app · Desktop: install icon in the address bar</p>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap">
+          <a class="btn" href="/">Open Proofline</a>
+        </div>
+      </div>
     </div></section>
   </main>
   <footer><img src="/mascot.png" alt=""><br>Proofline — before &amp; after proof for trades. A <a href="https://www.leonlink.net">Leon Link</a> product.<br>© ${new Date().getFullYear()} Leon Link</footer>`;
