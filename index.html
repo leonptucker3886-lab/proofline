@@ -107,7 +107,7 @@ label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bot
 .auth{max-width:400px;margin:48px auto;padding:0 18px}
 .auth h2{text-align:center}
 .err{color:#ff9d7a;font-size:14px;min-height:20px;margin:8px 0}
-</style><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Proofline?","acceptedAnswer":{"@type":"Answer","text":"Proofline turns before-and-after job photos into a clean, branded report page your customer can save, share, or print. Built for trades: chimney sweeps, HVAC, plumbing, landscaping and more."}},{"@type":"Question","name":"How much does Proofline cost?","acceptedAnswer":{"@type":"Answer","text":"Proofline is included with Ledgerline's Growth tier and up, which bundles Ledgerline, Reviewline and Proofline for the whole crew — one flat price — no separate fee."}},{"@type":"Question","name":"Do my customers need an account?","acceptedAnswer":{"@type":"Answer","text":"No. Every report gets a share link that opens a clean branded page in any browser — no app, no login."}},{"@type":"Question","name":"Can I print or export reports?","acceptedAnswer":{"@type":"Answer","text":"Yes — every share page has a Print / PDF button built in."}}]}</script>
+</style><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Proofline?","acceptedAnswer":{"@type":"Answer","text":"Proofline turns before-and-after job photos into a clean, branded report page your customer can save, share, or print. Built for trades: chimney sweeps, HVAC, plumbing, landscaping and more."}},{"@type":"Question","name":"How much does Proofline cost?","acceptedAnswer":{"@type":"Answer","text":"Proofline is included with Ledgerline's Growth tier and up; the Command tier adds the Reviewline review funnel, all for the whole crew — one flat price — no separate fee."}},{"@type":"Question","name":"Do my customers need an account?","acceptedAnswer":{"@type":"Answer","text":"No. Every report gets a share link that opens a clean branded page in any browser — no app, no login."}},{"@type":"Question","name":"Can I print or export reports?","acceptedAnswer":{"@type":"Answer","text":"Yes — every share page has a Print / PDF button built in."}}]}</script>
 </head><body>
 <script src="/qrcode.min.js"></script>
 <div id="app"></div>
@@ -126,7 +126,16 @@ function header(navLinks) {
 }
 function shell(content) {
   app.innerHTML = header(`<a class="hh" href="/reports">Reports</a><a class="hh" href="/settings">Settings</a><a class="hh" href="https://www.leonlink.net">Leon&nbsp;Link</a><a class="hl" href="#" id="logout">Log out</a>`) + `<main class="wrap">${content}</main>
-  <footer><img src="/mascot.png" alt=""><br>Proofline — before &amp; after proof for trades. A <a href="https://www.leonlink.net">Leon Link</a> product.<br>© ${new Date().getFullYear()} Leon Link</footer>`;
+  
+      <section style="margin-top:34px">
+        <div style="max-width:760px;margin:0 auto;background:#171310;border:1px solid rgba(232,150,60,.4);border-radius:18px;padding:36px 26px;text-align:center">
+          <h2 style="font-size:27px;margin:0 0 8px;color:#f5efe6">Proofline is in the box.</h2>
+          <p style="color:#c9bda9;font-size:15.5px;line-height:1.6;margin:0 auto 24px;max-width:540px">Create your Ledgerline workspace and Proofline comes with it — Growth tier and up. No separate signup, no separate fee.</p>
+          <a href="https://app.leonlink.net/signup" style="display:inline-block;margin-bottom:26px;background:#e8963c;color:#171310;font-weight:800;font-size:16px;padding:14px 34px;border-radius:12px;text-decoration:none">Sign up — get Proofline with Ledgerline &rarr;</a>
+          <a href="https://app.leonlink.net/signup"><img src="/og.png" alt="Proofline — before and after photo reports" loading="lazy" style="width:560px;max-width:100%;border-radius:12px;border:1px solid rgba(232,150,60,.4);display:block;margin:0 auto"></a>
+        </div>
+      </section>
+<footer><img src="/mascot.png" alt=""><br>Proofline — before &amp; after proof for trades. A <a href="https://www.leonlink.net">Leon Link</a> product.<br>© ${new Date().getFullYear()} Leon Link</footer>`;
   const lo = $('#logout'); if (lo) lo.onclick = () => api('pl-logout').catch(() => {}).finally(() => { location.href = '/login'; });
 }
 
